@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "worldtools",
+  "version": "${version}",
+  "name": "WorldTools",
+  "description": "A powerful Minecraft mod that captures high-detail snapshots of server worlds locally.",
+  "authors": [
+    "Constructor",
+    "P529",
+    "rfresh"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Avanatiker/WorldTools/",
+    "sources": "https://github.com/Avanatiker/WorldTools/"
+  },
+  "license": "GNU General Public License v3.0",
+  "icon": "assets/worldtools/WorldTools.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      {
+        "adapter": "kotlin",
+        "value": "org.waste.of.time.fabric.WorldToolsFabric"
+      }
+    ],
+    "modmenu": [
+      "org.waste.of.time.fabric.WorldToolsModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "worldtools.mixins.common.json",
+    "worldtools.mixins.fabric.json"
+  ],
+  "depends": {
+    "fabric-api": "*",
+    "minecraft": ["1.21.4"],
+    "java": ">=21",
+    "fabric-language-kotlin": ">=1.13.0+kotlin.2.1.0",
+    "cloth-config": ">=15"
+  }
+}
