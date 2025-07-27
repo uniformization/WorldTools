@@ -3,6 +3,10 @@ package org.waste.of.time.storage.cache
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityType
 import net.minecraft.nbt.NbtCompound
+import net.minecraft.storage.NbtWriteView
+import net.minecraft.util.ErrorReporter
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.waste.of.time.Utils.toByte
 import org.waste.of.time.WorldTools.TIMESTAMP_KEY
 import org.waste.of.time.WorldTools.config
@@ -11,10 +15,12 @@ import org.waste.of.time.storage.Cacheable
 data class EntityCacheable(
     val entity: Entity
 ) : Cacheable {
-    fun compound() = NbtCompound().apply {
+    private var LOGGER: Logger = LoggerFactory.getLogger(EntityCacheable::class.java)
+
+    fun compound() = NbtWriteView.create(ErrorReporter.Logging(entity.errorReporterContext, LOGGER)).apply {
         // saveSelfNbt has a check for RemovalReason.DISCARDED
         EntityType.getId(entity.type)?.let { putString(Entity.ID_KEY, it.toString()) }
-        entity.writeNbt(this)
+        entity.writeData(this)
 
         if (config.entity.behavior.modifyEntityBehavior) {
             putByte("NoAI", config.entity.behavior.noAI.toByte())
@@ -26,7 +32,7 @@ data class EntityCacheable(
         if (config.entity.metadata.captureTimestamp) {
             putLong(TIMESTAMP_KEY, System.currentTimeMillis())
         }
-    }
+    }.nbt
 
     override fun cache() {
         HotCache.entities.computeIfAbsent(entity.chunkPos) { mutableSetOf() }.apply {

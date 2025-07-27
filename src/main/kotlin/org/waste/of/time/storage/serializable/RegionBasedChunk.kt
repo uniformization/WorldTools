@@ -113,7 +113,7 @@ open class RegionBasedChunk(
             putLong(TIMESTAMP_KEY, System.currentTimeMillis())
         }
 
-        putInt("DataVersion", SharedConstants.getGameVersion().saveVersion.id)
+        putInt("DataVersion", SharedConstants.getGameVersion().dataVersion().id)
         putInt(SerializedChunk.X_POS_KEY, chunk.pos.x)
         putInt("yPos", chunk.bottomSectionCoord)
         putInt(SerializedChunk.Z_POS_KEY, chunk.pos.z)
@@ -233,14 +233,8 @@ open class RegionBasedChunk(
         val time = chunk.world.levelProperties.time
         val tickSchedulers = chunk.getTickSchedulers(time)
 
-        val blockTickSchedulers = tickSchedulers.blocks.map { ticker ->
-            ticker.toNbt { Registries.BLOCK.getId(it).toString()}
-        }
-        put("block_ticks", NbtList().apply { addAll(blockTickSchedulers) })
-        val fluidTickSchedulers = tickSchedulers.fluids.map { ticker ->
-            ticker.toNbt { Registries.FLUID.getId(it).toString()}
-        }
-        put("fluid_ticks", NbtList().apply { addAll(fluidTickSchedulers) })
+        put("block_ticks", SerializedChunk.BLOCK_TICKS_CODEC, tickSchedulers.blocks)
+        put("fluid_ticks", SerializedChunk.FLUID_TICKS_CODEC, tickSchedulers.fluids)
     }
 
     private fun NbtCompound.genPostProcessing(chunk: WorldChunk) {
@@ -250,7 +244,7 @@ open class RegionBasedChunk(
             chunk.heightmaps.filter {
                 chunk.status.heightmapTypes.contains(it.key)
             }.forEach { (key, value) ->
-                put(key.getName(), NbtLongArray(value.asLongArray()))
+                put(key.id, NbtLongArray(value.asLongArray()))
             }
         })
     }

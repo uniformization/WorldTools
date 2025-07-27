@@ -2,11 +2,15 @@ package org.waste.of.time.storage.serializable
 
 import net.minecraft.SharedConstants
 import net.minecraft.nbt.*
+import net.minecraft.storage.NbtWriteView
 import net.minecraft.text.MutableText
+import net.minecraft.util.ErrorReporter
 import net.minecraft.util.Util
 import net.minecraft.util.WorldSavePath
 import net.minecraft.world.GameRules
 import net.minecraft.world.level.storage.LevelStorage.Session
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.waste.of.time.Utils.toByte
 import org.waste.of.time.WorldTools.DAT_EXTENSION
 import org.waste.of.time.WorldTools.LOG
@@ -23,6 +27,8 @@ import java.io.File
 import java.io.IOException
 
 class LevelDataStoreable : Storeable() {
+    private var LOGGER: Logger = LoggerFactory.getLogger(LevelDataStoreable::class.java)
+
     override fun shouldStore() = config.general.capture.levelData
 
     override val verboseInfo: MutableText
@@ -83,10 +89,10 @@ class LevelDataStoreable : Storeable() {
         // skip removed features
 
         put("Version", NbtCompound().apply {
-            putString("Name", SharedConstants.getGameVersion().name)
-            putInt("Id", SharedConstants.getGameVersion().saveVersion.id)
-            putBoolean("Snapshot", !SharedConstants.getGameVersion().isStable)
-            putString("Series", SharedConstants.getGameVersion().saveVersion.series)
+            putString("Name", SharedConstants.getGameVersion().name())
+            putInt("Id", SharedConstants.getGameVersion().dataVersion().id)
+            putBoolean("Snapshot", !SharedConstants.getGameVersion().stable())
+            putString("Series", SharedConstants.getGameVersion().dataVersion().series)
         })
 
         NbtHelper.putDataVersion(this)
@@ -95,8 +101,8 @@ class LevelDataStoreable : Storeable() {
         mc.networkHandler?.listedPlayerListEntries?.find {
             it.profile.id == player.uuid
         }?.let {
-            putInt("GameType", it.gameMode.id)
-        } ?: putInt("GameType", player.server?.defaultGameMode?.id ?: 0)
+            putInt("GameType", it.gameMode.index)
+        } ?: putInt("GameType", player.server?.defaultGameMode?.index ?: 0)
 
         putInt("SpawnX", player.world.levelProperties.spawnPos.x)
         putInt("SpawnY", player.world.levelProperties.spawnPos.y)
@@ -124,11 +130,11 @@ class LevelDataStoreable : Storeable() {
         // ToDo: Seems that the client side game rules were removed. Now only works for single player :/
         val rules = player.world?.server?.gameRules?.genGameRules() ?: NbtCompound()
         put("GameRules", rules)
-        put("Player", NbtCompound().apply {
-            player.writeNbt(this)
+        put("Player", NbtWriteView.create(ErrorReporter.Logging(player.errorReporterContext, LOGGER)).apply {
+            player.writeData(this)
             remove("LastDeathLocation") // can contain sensitive information
             putString("Dimension", "minecraft:${player.world.registryKey.value.path}")
-        })
+        }.nbt)
 
         put("DragonFight", NbtCompound()) // not sure
         put("CustomBossEvents", NbtCompound()) // not sure

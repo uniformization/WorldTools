@@ -37,12 +37,7 @@ class EndFlow : Storeable() {
                 "worldtools.capture.click_to_open",
                 currentLevelName
             ).copy().styled {
-                it.withClickEvent(
-                    ClickEvent(
-                        ClickEvent.Action.OPEN_FILE,
-                        session.getDirectory(WorldSavePath.ROOT).toFile().path
-                    )
-                )
+                it.withClickEvent(ClickEvent.OpenFile(session.getDirectory(WorldSavePath.ROOT).toFile().path))
             }
 
             copy().append(directory).append(clickToOpen).sendInfo()
